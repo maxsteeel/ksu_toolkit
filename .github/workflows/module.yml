@@ -39,6 +39,12 @@ jobs:
           file uid_tool
           mv uid_tool module/uid_tool
 
+      - name: Build WebUI
+        run: |
+          cd webui
+          npm ci
+          npm run build
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
