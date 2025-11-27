@@ -5,6 +5,8 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 
+// NOTE: compile at -Os / -Oz / -O2 or better so strlen gets removed
+
 // get uid from kernelsu
 struct ksu_get_manager_uid_cmd {
 	uint32_t uid;
@@ -125,6 +127,8 @@ int main(int argc, char *argv[])
 
 	if (!argv[2] && !strnmatch(argv[1], "--getuid", strlen("--getuid") + 1)) {
 		unsigned int fd = 0;
+		
+		// we dont care about closing the fd, it gets released on exit automatically
 		syscall(SYS_reboot, KSU_INSTALL_MAGIC1, KSU_INSTALL_MAGIC2, 0, (void *)&fd);
 		if (!fd)
 			return fail();
