@@ -79,18 +79,14 @@ static int dumb_print_appuid(int uid)
 
 	char digits[6];
 
-	if (uid > 10000) {
-		int i = 4;
-		uid = uid % 100000; // oob filter
-		do {
-			digits[i] = 48 + (uid % 10);
-			uid = uid / 10;
-			i--;			
-		} while (i >= 0);
+	int i = 4;
+	do {
+		digits[i] = 48 + (uid % 10);
+		uid = uid / 10;
+		i--;			
+	} while (!(i < 0));
 
-		digits[5] = '\n';
-	} else
-		return fail();
+	digits[5] = '\n';
 
 	syscall(SYS_write, 1, digits, 6);
 	return 0;
