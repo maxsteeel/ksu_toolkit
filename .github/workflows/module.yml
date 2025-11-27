@@ -1,0 +1,50 @@
+name: build module
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: grab zig
+        run: |
+          curl -L https://ziglang.org/download/0.14.1/zig-x86_64-linux-0.14.1.tar.xz -o zig.tar.xz
+          tar -xf zig.tar.xz
+          mv zig-* zig
+
+      - name: grab sstrip from ELFkickers
+        run: |
+          curl -L https://www.muppetlabs.com/~breadbox/pub/software/ELFkickers-3.2.tar.gz -o sstrip.tar.gz
+          tar xf sstrip.tar.gz
+          make -C ELFkickers-3.2 sstrip
+          cp ELFkickers-3.2/sstrip/sstrip .
+
+      - name: compile via zigcc
+        run: |
+          echo "aarch64"
+          pwd
+          chmod +x sstrip
+
+          ./zig/zig cc -target aarch64-linux -s -Oz src/change_uid.c -static -Wl,--gc-sections -o switch_uid
+
+          wc -c switch_uid
+          
+          upx --ultra-brute switch_uid
+          
+          ./sstrip switch_uid
+          
+          wc -c switch_uid
+          file switch_uid
+          mv switch_uid module/switch_uid
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: module
+          path: module/
+
+
