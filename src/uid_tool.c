@@ -2,6 +2,16 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
+
+// get uid from kernelsu
+struct ksu_get_manager_uid_cmd {
+	uint32_t uid;
+};
+#define KSU_IOCTL_GET_MANAGER_UID _IOC(_IOC_READ, 'K', 10, 0)
+#define KSU_INSTALL_MAGIC1 0xDEADBEEF
+#define KSU_INSTALL_MAGIC2 0xCAFEBABE
 
 // for cmd, we can do a manual string to int
 // then check if its between 10000 ~ 20000
@@ -61,15 +71,17 @@ static int fail(void)
 	return 1;
 }
 
+static int show_usage(void)
+{
+	const char *usage = "Usage:\n./uidtool --setuid <uid>\n./uidtool --getuid\n";
+	syscall(SYS_write, 2, usage, strlen(usage));
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
-	if (argc != 3) {
-		const char *usage = "Usage:\n./uidtool --setuid <uid>\n./uidtool --getuid";
-		syscall(SYS_write, 2, usage, strlen(usage));
-		return 1;
-	}
-	
-
+	if (!argv[1])
+		goto bail_out;
 
 	if (!strnmatch(argv[1], "--setuid", strlen("--setuid") + 1)) {
 		int magic1 = 0xDEADBEEF;
@@ -90,6 +102,21 @@ int main(int argc, char *argv[])
 		return fail();
 	}
 
-	return 0;
+	if (!strnmatch(argv[1], "--getuid", strlen("--getuid") + 1)) {
+		unsigned int fd = 0;
+		syscall(SYS_reboot, KSU_INSTALL_MAGIC1, KSU_INSTALL_MAGIC2, 0, (void *)&fd);
+		if (!fd)
+			return fail();
+
+		struct ksu_get_manager_uid_cmd cmd = {0};
+		int ret = syscall(SYS_ioctl, fd, KSU_IOCTL_GET_MANAGER_UID, &cmd);
+		if (ret)
+			return fail();
+
+		return cmd.uid;
+	}
+
+bail_out:
+	return show_usage();
 
 }
