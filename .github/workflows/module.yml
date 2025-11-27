@@ -33,8 +33,6 @@ jobs:
 
           wc -c switch_uid
           
-          upx --ultra-brute switch_uid
-          
           ./sstrip switch_uid
           
           wc -c switch_uid
