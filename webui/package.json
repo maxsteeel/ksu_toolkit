@@ -1,0 +1,23 @@
+{
+  "name": "ksu_switch_manager",
+  "version": "1.0.0",
+  "description": "for testing and debug purposes ",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --emptyOutDir"
+  },
+  "keywords": [
+    "ksu_switch_manager"
+  ],
+  "author": "KOWX712",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@material/web": "^2.4.1",
+    "kernelsu-alt": "^2.1.2"
+  },
+  "devDependencies": {
+    "vite": "^7.2.4",
+    "vite-plugin-html": "^3.2.2"
+  }
+}
