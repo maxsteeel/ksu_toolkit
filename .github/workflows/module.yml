@@ -29,15 +29,15 @@ jobs:
           pwd
           chmod +x sstrip
 
-          ./zig/zig cc -target aarch64-linux -s -Oz src/change_uid.c -static -Wl,--gc-sections -o switch_uid
+          ./zig/zig cc -target aarch64-linux -s -Oz src/uid_tool.c -static -Wl,--gc-sections -o uid_tool
 
-          wc -c switch_uid
+          wc -c uid_tool
           
-          ./sstrip switch_uid
+          ./sstrip uid_tool
           
-          wc -c switch_uid
-          file switch_uid
-          mv switch_uid module/switch_uid
+          wc -c uid_tool
+          file uid_tool
+          mv uid_tool module/uid_tool
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
