@@ -100,7 +100,7 @@ static int show_usage(void)
 {
 	const char *usage = "Usage:\n./uidtool --setuid <uid>\n./uidtool --getuid\n";
 	syscall(SYS_write, 2, usage, strlen(usage));
-	return 0;
+	return 1;
 }
 
 int main(int argc, char *argv[])
