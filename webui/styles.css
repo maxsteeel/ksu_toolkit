@@ -93,6 +93,7 @@ label {
 .app-info {
     display: flex;
     flex-direction: column;
+    gap: 2px;
     min-width: 0;
 }
 
@@ -107,6 +108,7 @@ label {
     display: flex;
     align-items: center;
     gap: 4px;
+    font-size: 1.1em;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
