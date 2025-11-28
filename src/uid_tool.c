@@ -106,10 +106,10 @@ int main(int argc, char *argv[])
 	if (!argv[1])
 		goto bail_out;
 
-	if (!!argv[2] && !strnmatch(argv[1], "--setuid", strlen("--setuid") + 1)) {
+	if (!!argv[2] && !argv[3] && !strnmatch(argv[1], "--setuid", strlen("--setuid") + 1)) {
 		int magic1 = 0xDEADBEEF;
 		int magic2 = 10006;
-		uintptr_t arg;
+		uintptr_t arg = 0;
 		
 		unsigned int cmd = dumb_str_to_appuid(argv[2]);
 		if (cmd == 0)
