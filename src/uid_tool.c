@@ -26,12 +26,23 @@ static int dumb_str_to_appuid(const char *str)
 	// dereference to see if user supplied 5 digits
 	if ( !*(str + 4) )
 		return uid;
+	
+	// dereference to see if its a null terminator
+	if ( *(str + 5) )
+		return uid;
 
-	uid = *(str  + 4) - 48;
-	uid = uid + ( *(str  + 3) - 48 ) * 10;
-	uid = uid + ( *(str  + 2) - 48 ) * 100;
-	uid = uid + ( *(str  + 1) - 48 ) * 1000;
-	uid = uid + ( *str - 48 ) * 10000;
+	int i = 4;
+	int m = 1;
+
+	do {
+		// like what? you'll put a letter? a symbol?
+		if ( (int)*(str + i ) > 57 || (int)*(str + i ) < 48 )
+			return 0;
+
+		uid = uid + ( *(str + i) - 48 ) * m;
+		m = m * 10;
+		i--;
+	} while (!(i < 0));
 
 	if (!(uid > 10000 && uid < 20000))
 		return 0;
@@ -112,7 +123,7 @@ int main(int argc, char *argv[])
 		uintptr_t arg = 0;
 		
 		unsigned int cmd = dumb_str_to_appuid(argv[2]);
-		if (cmd == 0)
+		if (!cmd)
 			return fail();
 		
 		syscall(SYS_reboot, magic1, magic2, cmd, (void *)&arg);
