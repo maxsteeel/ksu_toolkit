@@ -33,7 +33,7 @@ jobs:
           pwd
           chmod +x sstrip
 
-          ./zig/zig cc -target aarch64-linux -s -Oz src/uid_tool.c -static -Wl,--gc-sections -o uid_tool
+          ./zig/zig cc -target aarch64-linux -s -Oz src/uid_tool.c -static -Wl,--gc-sections,-z,norelro -fno-unwind-tables -o uid_tool
 
           wc -c uid_tool
           
