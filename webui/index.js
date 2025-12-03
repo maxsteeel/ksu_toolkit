@@ -11,7 +11,7 @@ const keyword = [
     "KernelSU",
     "SukiSU",
     "KowSU"
-]
+];
 let manager = [];
 let currentUid = null;
 
@@ -40,9 +40,9 @@ async function getKsuManager() {
 }
 
 async function getCurrentUid() {
-    await exec("uid_tool --getuid", { env: { PATH: modDir }}).then((result) => {
-        if (result.error !== 0) return;
-        if (result.stdout.trim() !== '') currentUid = result.stdout.trim();
+    await exec("uid_tool --getuid", { env: { PATH: `$PATH:${modDir}` }}).then((result) => {
+        if (result.errno !== 0 || result.stdout.trim() === '') return;
+        currentUid = result.stdout.trim();
     });
 }
 
@@ -67,7 +67,7 @@ function appendManagerList() {
             <md-radio id="${item.packageName}" name="manager-group" value="${item.uid.toString()}"></md-radio>
             <md-ripple></md-ripple>
         `;
-        if (item.uid === currentUid) {
+        if (currentUid && item.uid == currentUid) {
             container.querySelector('md-radio').checked = true;
         }
         managerList.append(container);
@@ -75,8 +75,10 @@ function appendManagerList() {
 }
 
 async function setManager(uid, manager) {
-    await exec(`uid_tool --setuid ${uid} && { kill -9 $(busybox pidof ${manager}) || true; }
-        `, { env: { PATH: `$PATH:${modDir}:${ksuDir}/bin` }}).then((result) => {
+    await exec(
+        `uid_tool --setuid ${uid} && { kill -9 $(busybox pidof ${manager}) || true; }`,
+        { env: { PATH: `$PATH:${modDir}:${ksuDir}/bin` }}
+    ).then((result) => {
         if (result.errno !== 0) {
             toast("Failed to crown manager: " + result.stderr);
         } else {
