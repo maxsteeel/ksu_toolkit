@@ -132,6 +132,7 @@ label {
     white-space: nowrap;
 }
 
+#unsupported,
 #empty {
     display: none;
     font-size: 1.2em;
@@ -153,6 +154,15 @@ md-fab {
     position: fixed;
     right: 16px;
     bottom: calc(var(--bottom-inset) + 16px);
+}
+
+#crown {
+    transform: scale(0);
+    transition: all 0.2s ease;
+}
+
+#crown.show {
+    transform: scale(1);
 }
 
 [slot="headline"] {

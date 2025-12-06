@@ -1,56 +1,25 @@
-import { toast, exec, listPackages, getPackagesInfo } from 'kernelsu-alt';
+import { exec } from 'kernelsu-alt';
 import '@material/web/fab/fab.js';
 import '@material/web/icon/icon.js';
 import '@material/web/radio/radio.js';
 import '@material/web/ripple/ripple.js';
 import '@material/web/switch/switch.js';
+import * as uidModule from './uid.js';
 
-const modDir = '/data/adb/modules/ksu_toolkit';
-const ksuDir = '/data/adb/ksu';
-const keyword = [
+export const modDir = '/data/adb/modules/ksu_toolkit';
+export const bin = 'toolkit';
+export const ksuDir = '/data/adb/ksu';
+export const keyword = [
     "KernelSU",
     "SukiSU",
     "KowSU"
 ];
-let manager = [];
-let currentUid = null;
-
-async function getKsuManager() {
-    try {
-        const packages = await listPackages();
-        const pkgInfos = await getPackagesInfo(packages);
-        pkgInfos.forEach(pkg => {
-            if (keyword.some(kw => pkg.appLabel.toLowerCase().includes(kw.toLowerCase()))) {
-                manager.push({
-                    packageName: pkg.packageName,
-                    appLabel: pkg.appLabel,
-                    uid: pkg.uid
-                });
-            }
-        });
-    } catch (e) {
-        // Vite debug
-        if (import.meta.env.DEV) {
-            manager = [
-                { packageName: "me.weishu.kernelsu", appLabel: "KernelSU", uid: "10006"},
-                { packageName: "com.kowx712.supermanager", appLabel: "KowSU", uid: "10007"}
-            ];
-        }
-    }
-}
-
-async function getCurrentUid() {
-    await exec("toolkit --getuid", { env: { PATH: `$PATH:${modDir}` }}).then((result) => {
-        if (result.errno !== 0 || result.stdout.trim() === '') return;
-        currentUid = result.stdout.trim();
-    });
-}
 
 function appendManagerList() {
     const managerList = document.getElementById('manager-list');
     managerList.innerHTML = '';
-    if (manager.length === 0) document.getElementById('empty').style.display = "block";
-    manager.forEach(item => {
+    if (uidModule.manager.length === 0) document.getElementById('empty').style.display = "block";
+    uidModule.manager.forEach(item => {
         const container = document.createElement('div');
         container.className = 'manager-list-item';
         container.innerHTML = `
@@ -67,65 +36,67 @@ function appendManagerList() {
             <md-radio id="${item.packageName}" name="manager-group" value="${item.uid.toString()}"></md-radio>
             <md-ripple></md-ripple>
         `;
-        if (currentUid && item.uid == currentUid) {
+        if (uidModule.currentUid && item.uid == uidModule.currentUid) {
             container.querySelector('md-radio').checked = true;
         }
         managerList.append(container);
     });
 }
 
-async function setManager(uid, manager) {
-    await exec(
-        `toolkit --setuid ${uid} && { kill -9 $(busybox pidof ${manager}) || true; }`,
-        { env: { PATH: `$PATH:${modDir}:${ksuDir}/bin` }}
-    ).then((result) => {
-        if (result.errno !== 0) {
-            toast("Failed to crown manager: " + result.stderr);
-        } else {
-            toast("Success, root access might no longer avaible in current window.");
-        }
-    });
-}
-
-function saveManager(uid) {
-    const cmd = uid ? `echo ${uid} >` : 'rm -rf';
-    exec(`${cmd} ${ksuDir}/.manager_uid`).then(({result}) => {
-        if (result.errno !== 0) toast("Failed to save manager_uid: " + result.stderr);
-    });
-}
-
-document.addEventListener('DOMContentLoaded', async () => {
-    document.querySelectorAll('[unresolved]').forEach(el => el.removeAttribute('unresolved'));
-    await getKsuManager();
-    await getCurrentUid();
-    appendManagerList();
-
+function setupUidPageListener() {
     const saveSwitch = document.getElementById('save');
-    if (manager.length === 0) {
+    const crownBtn = document.getElementById('crown');
+
+    if (uidModule.manager.length === 0) {
         saveSwitch.selected = false;
-        saveSwitch.disabled = true;
-        saveManager();
+        uidModule.saveManager();
     } else {
+        saveSwitch.disabled = false;
         exec(`cat ${ksuDir}/.manager_uid`).then((result) => {
-            if (result.stdout.trim() !== '') saveSwitch.selected = true;
+            saveSwitch.selected = result.stdout.trim() !== '';
         });
     }
+
     saveSwitch.addEventListener('change', () => {
         if (saveSwitch.selected) {
             document.querySelectorAll('md-radio').forEach(radio => {
                 if (!radio.checked) return;
-                saveManager(radio.value);
+                uidModule.saveManager(radio.value);
             });
         } else {
-            saveManager();
+            uidModule.saveManager();
         }
     });
 
-    document.getElementById('crown').onclick = () => {
+    crownBtn.classList.add('show');
+    crownBtn.onclick = () => {
         document.querySelectorAll('md-radio').forEach(radio => {
             if (!radio.checked) return;
-            saveManager(saveSwitch.selected ? radio.value : null);
-            setManager(radio.value, radio.id);
+            uidModule.saveManager(saveSwitch.selected ? radio.value : null);
+            uidModule.setManager(radio.value, radio.id);
         });
     }
+}
+
+function checkUidFeature() {
+    exec(
+        `${bin} --setuid $(${bin} --getuid) || exit 1`,
+        { env: { PATH: `$PATH:${modDir}` }}
+    ).then((result) => {
+        if (result.errno !== 0 && !import.meta.env.DEV) {
+            document.getElementById('unsupported').style.display = 'block';
+            return;
+        }
+        appendManagerList();
+        setupUidPageListener();
+    }).catch(() => { });
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    document.querySelectorAll('[unresolved]').forEach(el => el.removeAttribute('unresolved'));
+
+    // Uid feature init
+    await uidModule.getKsuManager();
+    await uidModule.getCurrentUid();
+    checkUidFeature();
 });
