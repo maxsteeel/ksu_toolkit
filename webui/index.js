@@ -5,7 +5,7 @@ import '@material/web/radio/radio.js';
 import '@material/web/ripple/ripple.js';
 import '@material/web/switch/switch.js';
 
-const modDir = '/data/adb/modules/ksu_switch_manager';
+const modDir = '/data/adb/modules/ksu_toolkit';
 const ksuDir = '/data/adb/ksu';
 const keyword = [
     "KernelSU",
