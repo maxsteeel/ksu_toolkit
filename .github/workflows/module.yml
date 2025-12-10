@@ -33,7 +33,7 @@ jobs:
           chmod +x sstrip
 
           cd src
-          zig cc -target aarch64-linux -s -Oz -static -Wl,--gc-sections,-z,norelro -fno-unwind-tables -Wl,--entry=__start toolkit.c -o toolkit
+          zig cc -target aarch64-linux -s -Oz -static -Wl,--gc-sections,-z,norelro -fno-unwind-tables -Wl,--entry=__start -flto -fmerge-all-constants toolkit.c -o toolkit
 
           wc -c toolkit
           
