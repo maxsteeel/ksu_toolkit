@@ -12,7 +12,7 @@ body {
 .root_layout {
     width: 100%;
     max-width: 768px;
-    min-height: 100vh;
+    min-height: calc(100vh - var(--top-inset) - var(--bottom-inset));
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -42,10 +42,14 @@ body {
     box-sizing: border-box;
 }
 
-.body-content {
-    margin-top: 64px;
+md-tabs {
+    width: 100%
+}
+
+.content-container {
     width: 100%;
     max-width: calc(100vw - 32px);
+    margin-top: 128px;
 }
 
 .switch-item {
@@ -58,11 +62,10 @@ body {
     color: var(--md-sys-color-on-primary-container);
     background-color: var(--md-sys-color-primary-container);
     border-radius: 20px;
-    margin-top: 16px;
     user-select: none;
 }
 
-#manager-list {
+.list {
     margin-top: 16px;
     width: 100%;
     display: flex;
@@ -70,7 +73,7 @@ body {
     gap: 8px;
 }
 
-.manager-list-item {
+.list-item {
     max-width: 100%;
     background-color: var(--md-sys-color-surface-container);
     position: relative;
@@ -132,15 +135,64 @@ label {
     white-space: nowrap;
 }
 
-#unsupported,
-#empty {
+.search-box {
+    width: 100%;
+    display: flex;
+    margin: 16px 0;
+    gap: 8px;
+    position: relative;
+}
+
+.add-button {
+    flex-shrink: 0;
+    --md-filled-icon-button-container-height: 56px;
+    --md-filled-icon-button-container-width: 56px;
+    --md-filled-icon-button-container-shape: 6px;
+}
+
+.mount-entry {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.reminder {
+    font-size: 0.6em;
+    color: var(--md-sys-color-outline);
+}
+
+.indicator {
+    height: 24px;
+    width: 24px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    svg {
+        fill: greenyellow;
+    }
+}
+
+.inactive.indicator{
+    svg {
+        fill: orangered;
+    }
+}
+
+.remove-btn {
+    flex-shrink: 0;
+    --md-sys-shape-corner-full: 8px;
+}
+
+.inactive-banner {
     display: none;
     font-size: 1.2em;
     text-align: center;
     color: var(--md-sys-color-outline);
     position: fixed;
     left: 0;
-    bottom: 50vh;
+    top: 50vh;
     width: 100vw;
     user-select: none;
 }
@@ -154,6 +206,21 @@ md-fab {
     position: fixed;
     right: 16px;
     bottom: calc(var(--bottom-inset) + 16px);
+}
+
+md-outlined-text-field {
+    flex-grow: 1;
+}
+
+md-menu {
+    max-width: 768px;
+}
+
+md-menu-item {
+    width: calc(100vw - 32px);
+    max-width: 100%;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 #crown {
@@ -172,4 +239,8 @@ md-fab {
 [unresolved] {
     opacity: 0;
     overflow: hidden;
+}
+
+[hidden] {
+    display: none;
 }

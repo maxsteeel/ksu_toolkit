@@ -10,25 +10,50 @@
 <body>
     <div class="root_layout">
         <div class="header">
-            <div class="top-bar" slot="headline">KSU Switch Manager</div>
+            <div class="top-bar" slot="headline">KernelSU Toolkit</div>
+            <md-tabs>
+                <md-primary-tab id="crown-tab" aria-controls="content-crown" active>Crown</md-primary-tab>
+                <md-primary-tab id="umount-tab" aria-controls="content-umount">Umount</md-primary-tab>
+            </md-tabs>
         </div>
-        <div class="body-content" unresolved>
+        <div class="content-container" id="content-crown" role="tabpanel" aria-labelledby="crown-tab">
             <div class="switch-item">
                 <label for="save">Set manager on boot</label>
                 <md-switch id="save" disabled></md-switch>
             </div>
-            <div id="manager-list">
+            <div class="list" id="manager-list">
                 <!-- list of manager -->
             </div>
-            <div id="empty">No other KernelSU manager found</div>
-            <div id="unsupported">This feature is not available</div>
+            <div class="inactive-banner" id="manager-empty">No other KernelSU manager found</div>
+            <div class="inactive-banner" id="crown-unsupported">This feature is not available</div>
+
+            <md-fab variant="primary" label="Crown" id="crown">
+                <md-icon slot="icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M200-160v-80h560v80H200Zm0-140-51-321q-2 0-4.5.5t-4.5.5q-25 0-42.5-17.5T80-680q0-25 17.5-42.5T140-740q25 0 42.5 17.5T200-680q0 7-1.5 13t-3.5 11l125 56 125-171q-11-8-18-21t-7-28q0-25 17.5-42.5T480-880q25 0 42.5 17.5T540-820q0 15-7 28t-18 21l125 171 125-56q-2-5-3.5-11t-1.5-13q0-25 17.5-42.5T820-740q25 0 42.5 17.5T880-680q0 25-17.5 42.5T820-620q-2 0-4.5-.5t-4.5-.5l-51 321H200Zm68-80h424l26-167-105 46-133-183-133 183-105-46 26 167Zm212 0Z"/></svg>
+                </md-icon>
+            </md-fab>
+        </div>
+        <div class="content-container" id="content-umount" role="tabpanel" aria-labelledby="umount-tab" hidden>
+            <div class="switch-item">
+                <label for="kernel-umount">Kernel umount</label>
+                <md-switch id="kernel-umount" disabled></md-switch>
+            </div>
+            <div class="search-box" id="mount-entry-search" hidden>
+                <md-outlined-text-field label="mount point"></md-outlined-text-field>
+                <md-filled-icon-button class="add-button">
+                    <md-icon>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
+                    </md-icon>
+                </md-filled-icon-button>
+                <md-menu anchor-corner="start-start" menu-corner="end-start"></md-menu>
+            </div>
+            <div class="list" id="umount-list">
+                <!-- list of umount entry -->
+            </div>
+            <div class="inactive-banner" id="umount-unsupported">This feature is not available</div>
+            <div class="inactive-banner" id="umount-empty">No umount entry added yet</div>
+            <div class="inactive-banner" id="rezygisk">This feature is managed by ReZygisk</div>
         </div>
     </div>
-
-    <md-fab variant="primary" label="Crown" id="crown">
-        <md-icon slot="icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M200-160v-80h560v80H200Zm0-140-51-321q-2 0-4.5.5t-4.5.5q-25 0-42.5-17.5T80-680q0-25 17.5-42.5T140-740q25 0 42.5 17.5T200-680q0 7-1.5 13t-3.5 11l125 56 125-171q-11-8-18-21t-7-28q0-25 17.5-42.5T480-880q25 0 42.5 17.5T540-820q0 15-7 28t-18 21l125 171 125-56q-2-5-3.5-11t-1.5-13q0-25 17.5-42.5T820-740q25 0 42.5 17.5T880-680q0 25-17.5 42.5T820-620q-2 0-4.5-.5t-4.5-.5l-51 321H200Zm68-80h424l26-167-105 46-133-183-133 183-105-46 26 167Zm212 0Z"/></svg>
-        </md-icon>
-    </md-fab>
 </body>
 </html>
