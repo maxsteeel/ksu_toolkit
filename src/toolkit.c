@@ -182,12 +182,12 @@ static int c_main(int argc, char **argv, char **envp)
 
 		// now we pointerwalk
 		const char *char_buf = (const char *)buffer;
-		do {
+		while (*char_buf) {
 			__syscall(SYS_write, 1, (long)char_buf, strlen(char_buf), NONE, NONE, NONE);
 			__syscall(SYS_write, 1, (long)newline, 1, NONE, NONE, NONE);
 			
 			char_buf = char_buf + strlen(char_buf) + 1;
-		} while (*char_buf);
+		}
 
 		return 0;
 	}
