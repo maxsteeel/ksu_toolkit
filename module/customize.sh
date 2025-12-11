@@ -1,4 +1,28 @@
 #!/bin/sh
+PATH=/data/adb/ksu/bin:$PATH
+
+if [ ! "$KSU" = true ]; then
+	abort "[!] KernelSU only!"
+fi
+
+# this assumes CONFIG_COMPAT=y on CONFIG_ARM
+arch=$(busybox uname -m)
+echo "[+] detected: $arch"
+
+case "$arch" in
+	aarch64 | arm64 )
+		ELF_BINARY="toolkit-arm64"
+		;;
+	armv7l | armv8l )
+		ELF_BINARY="toolkit-arm"
+		;;
+	*)
+		abort "[!] $arch not supported!"
+		;;
+esac
+
+mv "$MODPATH/bin/$ELF_BINARY" "$MODPATH/toolkit"
+rm -rf "$MODPATH/bin"
 
 chmod 755 "$MODPATH/toolkit"
 
