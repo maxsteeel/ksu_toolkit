@@ -1,31 +1,44 @@
-import { toast, exec, listPackages, getPackagesInfo } from 'kernelsu-alt';
-import { modDir, bin, ksuDir, keyword } from './index.js';
+import { toast, exec, spawn, listPackages, getPackagesInfo } from 'kernelsu-alt';
+import { modDir, bin, ksuDir } from './index.js';
 
 let manager = [];
 let currentUid = null;
 
 async function getKsuManager() {
-    try {
-        const packages = await listPackages();
-        const pkgInfos = await getPackagesInfo(packages);
-        pkgInfos.forEach(pkg => {
-            if (keyword.some(kw => pkg.appLabel.toLowerCase().includes(kw.toLowerCase()))) {
-                manager.push({
-                    packageName: pkg.packageName,
-                    appLabel: pkg.appLabel,
-                    uid: pkg.uid
+    return new Promise((resolve) => {
+        let packages = [];
+        const result = spawn(`
+            abi=$(getprop ro.bionic.arch)
+            pm list packages -3 | cut -d: -f2 | busybox xargs -n1 -P$(busybox nproc) sh -c '
+                dir=$(pm path "$1" 2>/dev/null | sed -n "1s/^package://p" | busybox xargs dirname)
+                [ -f "$dir/lib/'"$abi"'/libksud.so" ] && echo "$1"
+            ' sh
+        `, [], { env: { PATH: `$PATH:${ksuDir}/bin` }});
+        result.stdout.on('data', (data) => packages.push(data.trim()));
+        result.on('exit', async () => {
+            try {
+                const pmPackages = await listPackages();
+                packages = packages.filter(val => pmPackages.includes(val)).sort();
+                const pkgInfos = await getPackagesInfo(packages);
+                pkgInfos.forEach(pkg => {
+                    manager.push({
+                        packageName: pkg.packageName,
+                        appLabel: pkg.appLabel,
+                        uid: pkg.uid
+                    });
                 });
+            } catch (e) {
+                // Vite debug
+                if (import.meta.env.DEV) {
+                    manager = [
+                        { packageName: "me.weishu.kernelsu", appLabel: "KernelSU", uid: "10006" },
+                        { packageName: "com.kowx712.supermanager", appLabel: "KowSU", uid: "10007" }
+                    ];
+                }
             }
+            resolve();
         });
-    } catch (e) {
-        // Vite debug
-        if (import.meta.env.DEV) {
-            manager = [
-                { packageName: "me.weishu.kernelsu", appLabel: "KernelSU", uid: "10006"},
-                { packageName: "com.kowx712.supermanager", appLabel: "KowSU", uid: "10007"}
-            ];
-        }
-    }
+    });
 }
 
 async function getCurrentUid() {

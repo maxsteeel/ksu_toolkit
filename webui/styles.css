@@ -197,6 +197,10 @@ label {
     user-select: none;
 }
 
+.inactive-banner.active {
+    display: block;
+}
+
 md-radio {
     flex-shrink: 0;
     margin: 0 8px;

@@ -18,11 +18,6 @@ export const modDir = '/data/adb/modules/ksu_toolkit';
 export const bin = 'toolkit';
 export const ksud = "/data/adb/ksud";
 export const ksuDir = '/data/adb/ksu';
-export const keyword = [
-    "KernelSU",
-    "SukiSU",
-    "KowSU"
-];
 
 const uidFile = ksuDir + "/.manager_uid";
 export const umountEntryFile = ksuDir + "/.umount_list";
@@ -31,7 +26,7 @@ export const umountEntryFile = ksuDir + "/.umount_list";
 function appendManagerList() {
     const managerList = document.getElementById('manager-list');
     managerList.innerHTML = '';
-    if (uidModule.manager.length === 0) document.getElementById('manager-empty').style.display = "block";
+    if (uidModule.manager.length === 0) document.getElementById('manager-empty').classList.add('active');
     uidModule.manager.forEach(item => {
         const listItem = document.createElement('div');
         listItem.className = 'list-item';
@@ -97,9 +92,10 @@ function checkUidFeature() {
         { env: { PATH: `$PATH:${modDir}` }}
     ).then((result) => {
         if (result.errno !== 0 && !import.meta.env.DEV) {
-            document.getElementById('crown-unsupported').style.display = 'block';
+            document.getElementById('crown-unsupported').classList.add('active');
             return;
         }
+        document.getElementById('manager-loading').classList.remove('active');
         appendManagerList();
         setupUidPageListener();
     }).catch(() => { });
@@ -109,7 +105,7 @@ function checkUidFeature() {
 function appendUmountList() {
     const umountEntryList = document.getElementById('umount-list');
     umountEntryList.innerHTML = '';
-    document.getElementById('umount-empty').style.display = umountModule.umountList.length === 0 ? "block" : "none";
+    document.getElementById('umount-empty').classList.toggle('active', umountModule.umountList.length === 0);
     umountModule.umountList.forEach(item => {
         const listItem = document.createElement('div');
         listItem.className = 'list-item';
@@ -211,7 +207,7 @@ function setupUmountPageListener() {
 
     if (umountModule.umountProvider === "rezygisk") {
         kernelUmountSwitch.selected = false;
-        document.getElementById('rezygisk').style.display = 'block';
+        document.getElementById('rezygisk').classList.add('active');
     } else {
         kernelUmountSwitch.disabled = false;
         seachBox.removeAttribute('hidden');
@@ -229,7 +225,7 @@ function setupUmountPageListener() {
 function checkUmountFeature() {
     exec(`${bin} --getlist`, { env: { PATH: `$PATH:${modDir}` }}).then((result) => {
         if (result.stderr.trim() === 'fail' && !import.meta.env.DEV) {
-            document.getElementById('umount-unsupported').style.display = 'block';
+            document.getElementById('umount-unsupported').classList.add('active');
             return;
         }
         appendUmountList();
