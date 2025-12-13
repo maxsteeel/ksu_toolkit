@@ -1,8 +1,9 @@
-import { exec } from 'kernelsu-alt';
+import { exec, spawn, toast } from 'kernelsu-alt';
 import '@material/web/chips/chip-set.js';
 import '@material/web/chips/filter-chip.js';
 import '@material/web/fab/fab.js';
 import '@material/web/icon/icon.js';
+import '@material/web/iconbutton/icon-button.js';
 import '@material/web/iconbutton/filled-icon-button.js';
 import '@material/web/iconbutton/outlined-icon-button.js';
 import '@material/web/menu/menu.js';
@@ -319,6 +320,48 @@ function checkSuLogFeature() {
     });
 }
 
+function checkUpdate() {
+    const link = 'https://nightly.link/backslashxx/ksu_toolkit/workflows/module/master?preview';
+    let htmlContent;
+    const remote = spawn(`
+        if command -v curl; then
+            curl -Ls ${link}
+        else
+            busybox wget -qO- ${link}
+        fi
+    `, [], { env: { PATH: `$PATH:${ksuDir}/bin` }});
+    remote.stdout.on('data', (data) => htmlContent += data);
+    remote.on('exit', (code) => {
+        if (code !== 0) return;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlContent, "text/html");
+        const zipURL = doc.querySelector('a[href$=".zip"]')?.href;
+
+        if (!zipURL) return;
+        const remoteVersion = parseInt(zipURL.split("-")[1]) || 0;
+
+        exec(
+            `cat /data/adb/modules_update/ksu_toolkit/module.prop ${modDir}/module.prop | grep "^versionCode=" | head -n1 | cut -d= -f2`
+        ).then((local) => {
+            if (local.stdout.trim() === '') return;
+            const localVersion = parseInt(local.stdout.trim());
+            if (localVersion < remoteVersion) {
+                toast("Update available!");
+                document.getElementById('update-btn').classList.add('show');
+                document.getElementById('update-btn').onclick = () => {
+                    toast("Redirecting to " + link);
+                    setTimeout(() => {
+                        exec(`am start -a android.intent.action.VIEW -d ${link}`)
+                            .then(({ errno }) => {
+                                if (errno !== 0) toast("Failed to open link");
+                            });
+                    }, 100);
+                }
+            }
+        });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('[unresolved]').forEach(el => el.removeAttribute('unresolved'));
 
@@ -349,4 +392,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // SU log feature init
     await sulogModule.getAppList();
     checkSuLogFeature();
+
+    checkUpdate();
 });
