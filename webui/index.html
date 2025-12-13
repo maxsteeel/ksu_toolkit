@@ -14,8 +14,10 @@
             <md-tabs>
                 <md-primary-tab id="crown-tab" aria-controls="content-crown" active>Crown</md-primary-tab>
                 <md-primary-tab id="umount-tab" aria-controls="content-umount">Umount</md-primary-tab>
+                <md-primary-tab id="sulog-tab" aria-controls="content-sulog">SU log</md-primary-tab>
             </md-tabs>
         </div>
+        <!-- Crown -->
         <div class="content-container" id="content-crown" role="tabpanel" aria-labelledby="crown-tab">
             <div class="switch-item">
                 <label for="save">Set manager on boot</label>
@@ -34,6 +36,7 @@
                 </md-icon>
             </md-fab>
         </div>
+        <!-- Umount -->
         <div class="content-container" id="content-umount" role="tabpanel" aria-labelledby="umount-tab" hidden>
             <div class="switch-item">
                 <label for="kernel-umount">Kernel umount</label>
@@ -54,6 +57,21 @@
             <div class="inactive-banner" id="umount-unsupported">This feature is not available</div>
             <div class="inactive-banner" id="umount-empty">No umount entry added yet</div>
             <div class="inactive-banner" id="rezygisk">This feature is managed by ReZygisk</div>
+        </div>
+        <!-- sulog -->
+        <div class="content-container" id="content-sulog" role="tabpanel" aria-labelledby="sulog-tab" hidden>
+            <md-chip-set>
+                <md-filter-chip id="filter-all" label="All"></md-filter-chip>
+                <md-filter-chip id="filter-access" label="access"></md-filter-chip>
+                <md-filter-chip id="filter-stat" label="stat"></md-filter-chip>
+                <md-filter-chip id="filter-exec" label="exec"></md-filter-chip>
+                <md-filter-chip id="filter-ioctl" label="ioctl"></md-filter-chip>
+                <md-filter-chip id="filter-exclude-manager" label="Exclude Manager" selected></md-filter-chip>
+            </md-chip-set>
+            <div class="list" id="sulog-list">
+                <!-- list of SU log -->
+            </div>
+            <div class="inactive-banner" id="sulog-unsupported">This feature is not available</div>
         </div>
     </div>
 </body>

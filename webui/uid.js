@@ -31,8 +31,8 @@ async function getKsuManager() {
                 // Vite debug
                 if (import.meta.env.DEV) {
                     manager = [
-                        { packageName: "me.weishu.kernelsu", appLabel: "KernelSU", uid: "10006" },
-                        { packageName: "com.kowx712.supermanager", appLabel: "KowSU", uid: "10007" }
+                        { packageName: "me.weishu.kernelsu", appLabel: "KernelSU", uid: 10006 },
+                        { packageName: "com.kowx712.supermanager", appLabel: "KowSU", uid: 10007 }
                     ];
                 }
             }

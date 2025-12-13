@@ -1,4 +1,6 @@
 import { exec } from 'kernelsu-alt';
+import '@material/web/chips/chip-set.js';
+import '@material/web/chips/filter-chip.js';
 import '@material/web/fab/fab.js';
 import '@material/web/icon/icon.js';
 import '@material/web/iconbutton/filled-icon-button.js';
@@ -13,6 +15,7 @@ import '@material/web/tabs/tabs.js';
 import '@material/web/textfield/outlined-text-field.js';
 import * as uidModule from './uid.js';
 import * as umountModule from './umount.js';
+import * as sulogModule from './sulog.js';
 
 export const modDir = '/data/adb/modules/ksu_toolkit';
 export const bin = 'toolkit';
@@ -234,6 +237,88 @@ function checkUmountFeature() {
     }).catch(() => { });
 }
 
+function handleChipChange(selectedId) {
+    const allChip = document.getElementById('filter-all');
+    const opChips = ['filter-access', 'filter-stat', 'filter-exec', 'filter-ioctl'];
+    
+    if (selectedId === 'filter-all' && allChip.selected) {
+        opChips.forEach(id => document.getElementById(id).removeAttribute('selected'));
+    } else if (opChips.includes(selectedId)) {
+        if (document.getElementById(selectedId).hasAttribute('selected')) {
+            allChip.removeAttribute('selected');
+        }
+    }
+    filterSuLogList();
+}
+
+function setupSuLogFilter() {
+    const chips = ['filter-all', 'filter-exclude-manager', 'filter-access', 'filter-stat', 'filter-exec', 'filter-ioctl'];
+    chips.forEach(id => {
+        const chip = document.getElementById(id);
+        chip.addEventListener('click', () => requestAnimationFrame(() => handleChipChange(id)));
+    });
+    const allChip = document.getElementById('filter-all');
+    const opChips = ['filter-access', 'filter-stat', 'filter-exec', 'filter-ioctl'];
+    if (!allChip.hasAttribute('selected') && opChips.every(id => !document.getElementById(id).hasAttribute('selected'))) {
+        allChip.setAttribute('selected', '');
+    }
+    filterSuLogList();
+}
+
+function filterSuLogList() {
+    const allChip = document.getElementById('filter-all');
+    const excludeChip = document.getElementById('filter-exclude-manager');
+    const opChips = ['filter-access', 'filter-stat', 'filter-exec', 'filter-ioctl'];
+    const selectedOps = opChips.filter(id => document.getElementById(id).selected).map(id => id.replace('filter-', ''));
+    const showAll = allChip.selected;
+    const excludeManager = excludeChip.selected;
+    const list = document.getElementById('sulog-list');
+
+    list.querySelectorAll('.sulog-item').forEach(item => {
+        const hasOp = showAll || selectedOps.some(op => item.classList.contains(`operation-${op}`));
+        const notManager = !excludeManager || !item.classList.contains(`uid-${uidModule.currentUid}`);
+        item.style.display = (hasOp && notManager) ? '' : 'none';
+    });
+}
+
+// SU log
+export function appendSuLogList(newList) {
+    const suLogList = document.getElementById('sulog-list');
+    if (!newList) {
+        suLogList.innerHTML = '';
+        newList = sulogModule.sulogList;
+    }
+    newList.forEach(item => {
+        const operations = sulogModule.symbolMap[item.sym] || [item.sym];
+        const operation = operations.map(op => `<div class="operation ${op}">${op}</div>`).join('');
+        const app = sulogModule.appList.find(a => a.uid === item.uid);
+
+        const listItem = document.createElement('div');
+        listItem.className = 'list-item sulog-item';
+        listItem.classList.add(...operations.map(op => `operation-${op}`), `uid-${item.uid}`);
+        listItem.innerHTML = `
+            <div class="sulog-uid">
+                <div>${item.uid}</div>
+                ${app ? `<div class="package-name">${app.appLabel} (${app.packageName})</div>`: '' }
+            </div>
+            <div class="operations">${operation}</div>
+        `;
+        suLogList.prepend(listItem);
+    });
+    filterSuLogList();
+}
+
+function checkSuLogFeature() {
+    exec(`${bin} --sulog`, { env: { PATH: `$PATH:${modDir}` }}).then((result) => {
+        if (result.stdout.trim() === '' && !import.meta.env.DEV) {
+            document.getElementById('sulog-unsupported').classList.add('active');
+            return;
+        }
+        setInterval(sulogModule.getSulog, 1000);
+        setupSuLogFilter();
+    });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('[unresolved]').forEach(el => el.removeAttribute('unresolved'));
 
@@ -260,4 +345,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     await umountModule.getMountEntryList();
     await umountModule.getUmountProvider();
     checkUmountFeature();
+
+    // SU log feature init
+    await sulogModule.getAppList();
+    checkSuLogFeature();
 });

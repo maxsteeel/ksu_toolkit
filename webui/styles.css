@@ -117,6 +117,7 @@ label {
     white-space: nowrap;
 }
 
+.operation,
 .app-uid {
     font-size: 0.6em;
     font-weight: bold;
@@ -183,6 +184,63 @@ label {
 .remove-btn {
     flex-shrink: 0;
     --md-sys-shape-corner-full: 8px;
+}
+
+.sulog-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sulog-uid {
+    flex-grow: 1;    
+}
+
+.sulog-app .app-label {
+    font-size: 0.9em;
+}
+
+.operations {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.operation.access {
+    color: black;
+    background-color: forestgreen;
+}
+
+#filter-access {
+    --md-filter-chip-outline-color: forestgreen;
+}
+
+.operation.stat {
+    color: black;
+    background-color: chocolate;
+}
+
+#filter-stat {
+    --md-filter-chip-outline-color: chocolate;
+}
+
+.operation.exec {
+    color: black;
+    background-color: cornflowerblue;
+}
+
+#filter-exec {
+    --md-filter-chip-outline-color: cornflowerblue;
+}
+
+.operation.ioctl {
+    color: black;
+    background-color: darkturquoise;
+}
+
+#filter-ioctl {
+    --md-filter-chip-outline-color: darkturquoise;
 }
 
 .inactive-banner {
