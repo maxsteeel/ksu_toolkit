@@ -101,7 +101,7 @@ static int fail(const char *error)
  */
 
 __attribute__((noinline))
-static int uid_to_str_wn(int uid, unsigned long len, char *buf)
+static void uid_to_str_wn(int uid, unsigned long len, char *buf)
 {
 	int i = len - 1;
 	while (!(i < 0)) {
@@ -111,8 +111,6 @@ static int uid_to_str_wn(int uid, unsigned long len, char *buf)
 	} 
 
 	buf[len] = '\n';
-
-	return 0;
 }
 
 __attribute__((always_inline))
@@ -168,10 +166,12 @@ static int c_main(int argc, char **argv, char **envp)
 
 		char gbuf[6]; // +1 for \n
 
-		if (!uid_to_str_wn(cmd.uid, sizeof(gbuf) - 1, gbuf))
-			return __syscall(SYS_write, 1, (long)gbuf, sizeof(gbuf), NONE, NONE, NONE);
+		uid_to_str_wn(cmd.uid, sizeof(gbuf) - 1, gbuf);
 
-		goto fail;
+		__syscall(SYS_write, 1, (long)gbuf, sizeof(gbuf), NONE, NONE, NONE);
+		
+		return 0;
+		
 	}
 
 	if (!memcmp(argv[1], "--getlist", sizeof("--getlist")) && !argv[2]) {
