@@ -119,7 +119,6 @@ __attribute__((always_inline))
 static int c_main(int argc, char **argv, char **envp)
 {
 	const char *ok = "ok\n";
-	const char *newline = "\n";
 	const char *usage =
 	"Usage:\n"
 	"./toolkit --setuid <uid>\n"
@@ -211,12 +210,20 @@ static int c_main(int argc, char **argv, char **envp)
 			goto fail;
 
 		// now we pointerwalk
-		const char *char_buf = (const char *)buffer;
+		char *char_buf = (char *)buffer;
+
 		while (*char_buf) {
-			__syscall(SYS_write, 1, (long)char_buf, strlen(char_buf), NONE, NONE, NONE);
-			__syscall(SYS_write, 1, (long)newline, 1, NONE, NONE, NONE);
-			
-			char_buf = char_buf + strlen(char_buf) + 1;
+			// get entry's string length first
+			int len = strlen(char_buf);
+
+			// write a newline to it, basically replacing \0 with \n
+			*(char_buf + len) = '\n';
+
+			// len +1 to account for newline
+			__syscall(SYS_write, 1, (long)char_buf, len + 1, NONE, NONE, NONE);			
+
+			// walk the pointer
+			char_buf = char_buf + len + 1;
 		}
 
 		return 0;
