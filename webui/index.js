@@ -284,8 +284,9 @@ function filterSuLogList() {
 }
 
 // SU log
-export function appendSuLogList(newList) {
+export function appendSuLogList(newList, currentDate) {
     const suLogList = document.getElementById('sulog-list');
+    const loading = document.getElementById('sulist-loading');
     if (!newList) {
         suLogList.innerHTML = '';
         newList = sulogModule.sulogList;
@@ -294,6 +295,14 @@ export function appendSuLogList(newList) {
         const operations = sulogModule.symbolMap[item.sym] || [item.sym];
         const operation = operations.map(op => `<div class="operation ${op}">${op}</div>`).join('');
         const app = sulogModule.appList.find(a => a.uid === item.uid);
+        const timestamp = new Date(currentDate - sulogModule.upTime * 1000 + item.time * 1000);
+        const year = timestamp.getFullYear();
+        const month = String(timestamp.getMonth() + 1).padStart(2, '0');
+        const day = String(timestamp.getDate()).padStart(2, '0');
+        const hours = String(timestamp.getHours()).padStart(2, '0');
+        const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+        const seconds = String(timestamp.getSeconds()).padStart(2, '0');
+        const formattedTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 
         const listItem = document.createElement('div');
         listItem.className = 'list-item sulog-item';
@@ -303,20 +312,25 @@ export function appendSuLogList(newList) {
                 <div>${item.uid}</div>
                 ${app ? `<div class="package-name">${app.appLabel} (${app.packageName})</div>`: '' }
             </div>
-            <div class="operations">${operation}</div>
+            <div class="sulog-trailing">
+                ${sulogModule.upTime === 0 ? '' : `<div class="timestamp">${formattedTime}</div>`}
+                <div class="operations">${operation}</div>
+            </div>
         `;
         suLogList.prepend(listItem);
     });
+    loading.classList.remove('active');
     filterSuLogList();
 }
 
 function checkSuLogFeature() {
     exec(`${bin} --sulog`, { env: { PATH: `$PATH:${modDir}` }}).then((result) => {
         if (result.stdout.trim() === '' && !import.meta.env.DEV) {
+            document.getElementById('sulist-loading').classList.remove('active');
             document.getElementById('sulog-unsupported').classList.add('active');
             return;
         }
-        setInterval(sulogModule.getSulog, 1000);
+        setInterval(sulogModule.getSulog, 2500);
         setupSuLogFilter();
     });
 }

@@ -1,7 +1,7 @@
 import { spawn, listPackages, getPackagesInfo } from 'kernelsu-alt';
 import { modDir, bin, appendSuLogList } from './index.js';
 
-let appList = [], sulogList = [], sulogOld = [];
+let appList = [], sulogList = [], sulogOld = [], upTime = 0;
 const symbolMap = {
     'a': ['access'],
     's': ['stat'],
@@ -36,17 +36,23 @@ function getSulog() {
     let copy = [];
     const result = spawn(`${bin}`, ['--sulog'], { env: { PATH: `${modDir}` }});
     result.stdout.on('data', (data) => {
-        // output format = sym: i uid: 010230
+        if (data.trim().includes('uptime')) {
+            upTime = parseInt(data.trim().split(' ')[1]);
+            return;
+        }
+        // output format = sym: i uid: 010230 time: 0000000154
         const symbol = data.trim().split(' ')[1];
         const userId = parseInt(data.trim().split(' ')[3]);
-        copy.push({ uid: userId, sym: symbol });
+        const timeStamp = data.trim().split(' ')[5] ? parseInt(data.trim().split(' ')[5]) : 0;
+        copy.push({ uid: userId, sym: symbol, time: timeStamp });
     });
     result.on('exit', () => {
         if (import.meta.env.DEV) { // Vite debug
-            copy.push({ uid: 10008, sym: '$' });
+            upTime = 800;
+            copy.push({ uid: 10008, sym: '$', time: 20 });
         }
 
-        // Since sulog give a maximum 100 lines of output so we need this to compare the overlapping length
+        // Since sulog give a maximum 250 lines of output so we need this to compare the overlapping length
         let overlap = 0;
         const maxLen = Math.min(sulogOld.length, copy.length);
         for (let len = maxLen; len >= 0; len--) {
@@ -60,7 +66,10 @@ function getSulog() {
 
         const newItems = copy.slice(overlap);
         sulogList.push(...newItems);
-        appendSuLogList(newItems);
+        if (newItems.length > 0) {
+            const currentDate = Date.now();
+            appendSuLogList(newItems, currentDate);
+        }
         sulogOld = [...copy];
     });
 }
@@ -69,4 +78,4 @@ function parseSymbol(sym) {
     return symbolMap[sym] || [sym];
 }
 
-export { appList, sulogList, symbolMap, getAppList, getSulog, parseSymbol }
+export { appList, sulogList, upTime, symbolMap, getAppList, getSulog, parseSymbol }
