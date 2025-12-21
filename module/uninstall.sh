@@ -6,3 +6,5 @@
 KSUDIR="/data/adb/ksu"
 
 rm -rf "$KSUDIR/.manager_uid"
+
+rm "$KSUDIR/bin/toolkit"
