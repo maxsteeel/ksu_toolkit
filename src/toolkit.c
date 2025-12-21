@@ -39,11 +39,27 @@ struct sulogv1_entry_rcv_ptr {
 #define SULOGV1_ENTRY_MAX 100
 #define SULOGV1_BUFSIZ SULOGV1_ENTRY_MAX * (sizeof (struct sulogv1_entry))
 
+// sulog v2, timestamped version, 250 entries, 8 bytes per entry
+struct sulog_entry {
+	uint32_t s_time; // uptime in seconds
+	uint32_t data; // uint8_t[0,1,2] = uid, basically uint24_t, uint8_t[3] = symbol
+} __attribute__((packed));
+
+struct sulog_entry_rcv_ptr {
+	uint64_t index_ptr; // send index here
+	uint64_t buf_ptr; // send buf here
+	uint64_t uptime_ptr; // uptime
+};
+
+#define SULOG_ENTRY_MAX 250
+#define SULOG_BUFSIZ SULOG_ENTRY_MAX * (sizeof (struct sulog_entry))
+
 // magic numbers for custom interfaces
 #define CHANGE_MANAGER_UID 10006
 #define KSU_UMOUNT_GETSIZE 107   // get list size // shit is u8 we cant fit 10k+ on it
 #define KSU_UMOUNT_GETLIST 108   // get list
 #define GET_SULOG_DUMP 10009     // get sulog dump, max, last 100 escalations
+#define GET_SULOG_DUMP_V2 10010  // get sulog dump, timestamped, last 250 escalations
 
 __attribute__((noinline))
 static unsigned long strlen(const char *str)
@@ -99,7 +115,7 @@ static int dumb_str_to_appuid(const char *str)
 }
 
 /*
- *	uid_to_str_wn, int to string + newline
+ *	long_to_str_wn, long to string + newline
  *	
  *	converts an int to string with expected len and adds a newline
  *	make sure buf size is len + 1
@@ -108,16 +124,16 @@ static int dumb_str_to_appuid(const char *str)
  *	no bounds check, no nothing
  *	
  *	example:
- *	uid_to_str_wn(10123, 5, buf); // where buf is char buf[6];
+ *	long_to_str_wn(10123, 5, buf); // where buf is char buf[6];
  */
 
 __attribute__((noinline))
-static void uid_to_str_wn(int uid, unsigned long len, char *buf)
+static void long_to_str_wn(long number, unsigned long len, char *buf)
 {
 	int i = len - 1;
 	while (!(i < 0)) {
-		buf[i] = 48 + (uid % 10);
-		uid = uid / 10;
+		buf[i] = 48 + (number % 10);
+		number = number / 10;
 		i--;			
 	} 
 
@@ -133,7 +149,8 @@ static int c_main(int argc, char **argv, char **envp)
 	"./toolkit --setuid <uid>\n"
 	"./toolkit --getuid\n"
 	"./toolkit --getlist\n"
-	"./toolkit --sulog\n";
+	"./toolkit --sulog\n"
+	"./toolkit --sulog2\n";
 
 	unsigned int fd = 0;
 	char *argv1 = argv[1];
@@ -179,7 +196,7 @@ static int c_main(int argc, char **argv, char **envp)
 
 		char gbuf[6]; // +1 for \n
 
-		uid_to_str_wn(cmd.uid, sizeof(gbuf) - 1, gbuf);
+		long_to_str_wn(cmd.uid, sizeof(gbuf) - 1, gbuf);
 
 		print_out(gbuf, sizeof(gbuf));
 		
@@ -246,7 +263,7 @@ static int c_main(int argc, char **argv, char **envp)
 		return 0;
 	}
 
-	if (!memcmp(argv1, "--sulog", sizeof("--sulog")) && !argv2) {	
+	if (!memcmp(argv1, "--sulog", sizeof("--sulog")) && !argv2) {
 		unsigned long sulog_index_next;
 		char sulog_buf[SULOGV1_BUFSIZ];
 		char t[] = "sym: ? uid: ??????";
@@ -273,7 +290,7 @@ static int c_main(int argc, char **argv, char **envp)
 		// so we cannot use strlen on the print, as there will be no null term on the buffer
 		if (entry_ptr->symbol) {
 			t[5] = entry_ptr->symbol;
-			uid_to_str_wn(entry_ptr->uid, 6, &t[12]);
+			long_to_str_wn(entry_ptr->uid, 6, &t[12]);
 			print_out(t, sizeof(t));			
 		}
 
@@ -285,6 +302,50 @@ static int c_main(int argc, char **argv, char **envp)
 		return 0;
 	}
 
+	if (!memcmp(argv1, "--sulog2", sizeof("--sulog2")) && !argv2) {
+		uint32_t sulog_index_next;
+		uint32_t sulog_uptime = 0;
+		char sulog_buf[SULOG_BUFSIZ];
+		char uptime_text[] = "uptime: ???????????";
+
+		struct sulog_entry_rcv_ptr sbuf = {0};
+		
+		sbuf.index_ptr = (uint64_t)&sulog_index_next;
+		sbuf.buf_ptr = (uint64_t)sulog_buf;
+		sbuf.uptime_ptr = (uint64_t)&sulog_uptime;
+
+		__syscall(SYS_reboot, KSU_INSTALL_MAGIC1, GET_SULOG_DUMP_V2, 0, (long)&sbuf, NONE, NONE);
+		
+		int start = sulog_index_next;
+
+		int i = 0;
+
+		if (!(*(uintptr_t *)&sbuf == (uintptr_t)&sbuf) )
+			goto fail;
+
+		long_to_str_wn(sulog_uptime, 11, &uptime_text[8]);
+		print_out(uptime_text, sizeof(uptime_text));
+
+#if 0
+		sulog_loop_start:		
+		int idx = (start + i) % SULOG_ENTRY_MAX; // modulus due to this overflowing entry_max
+		struct sulog_entry *entry_ptr = (struct sulog_entry *)(sulog_buf + idx * sizeof(struct sulog_entry) );
+
+		if (entry_ptr->data) {
+			uint32_t uid = {0};
+			memcpy(&uid, (void *)&(*entry_ptr).data, 3);
+			char sym[1] = {0};
+			memcpy(&sym, (void *)&(*entry_ptr).data + 3, 1);
+			printf("sym: %c uid: %.6d time: %.11u\n", sym[0], uid, entry_ptr->s_time);
+		}
+
+		i++;
+
+		if (i < SULOG_ENTRY_MAX)
+			goto sulog_loop_start;
+#endif
+		return 0;
+	}
 show_usage:
 	print_err(usage, strlen(usage));
 	return 1;
