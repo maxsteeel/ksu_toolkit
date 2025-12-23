@@ -221,15 +221,17 @@ static int c_main(int argc, char **argv, char **envp)
 
 	if (!memcmp(argv1, "--setuid", sizeof("--setuid")) && 
 		!!argv2 && !!argv2[4] && !argv2[5] && !argv[3]) {
-		uintptr_t arg = 0;
 		
 		unsigned int cmd = dumb_str_to_appuid(argv2);
 		if (!cmd)
 			goto fail;
 		
-		ksu_sys_reboot(CHANGE_MANAGER_UID, cmd, (long)&arg);
+		ksu_sys_reboot(CHANGE_MANAGER_UID, cmd, (long)argv1);
 
-		if (arg && *(uintptr_t *)arg == arg ) {
+		// yeah we reuse argv1 as buffer
+		// all we need is just somethign writable that is atleast uintptr_t wide
+		// since argv1 here will fit 9 bytes, a full u64 ptr can fit no issues
+		if (argv1 && *(uintptr_t *)argv1 == (uintptr_t)argv1 ) {
 			print_out(ok, strlen(ok));
 			return 0;
 		}
@@ -253,6 +255,7 @@ static int c_main(int argc, char **argv, char **envp)
 			goto fail;
 
 		// yeah we reuse argv1 as our buffer
+		// this one is really just for a buffer/scratchpad
 		long_to_str(cmd.uid, 5, argv1);
 		argv1[5] = '\n';
 
