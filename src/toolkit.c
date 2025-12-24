@@ -144,21 +144,24 @@ static int dumb_str_to_appuid(const char *str)
  *	converts an int to string with expected len
  *	
  *	caller is reposnible for sanity!
- *	no bounds check, no nothing
+ *	no bounds check, no nothing, do not pass len = 0
  *	
  *	example:
  *	long_to_str(10123, 5, buf); // where buf is char buf[5]; atleast
  */
 
 __attribute__((noinline))
-static void long_to_str(long number, unsigned long len, char *buf)
+static void long_to_str(unsigned long number, unsigned long len, char *buf)
 {
-	int i = len - 1;
-	while (!(i < 0)) {
-		buf[i] = 48 + (number % 10);
-		number = number / 10;
-		i--;			
-	}
+
+start:
+	buf[len - 1] = 48 + (number % 10);
+	number = number / 10;
+	len--;
+
+	if (len > 0)
+		goto start;
+
 	return;
 }
 
