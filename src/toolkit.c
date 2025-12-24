@@ -6,7 +6,6 @@
 
 // zig cc -target aarch64-linux -Oz -s -Wl,--gc-sections,--strip-all,-z,norelro -fno-unwind-tables -Wl,--entry=__start toolkit.c -o toolkit 
 
-#define alloca __builtin_alloca
 #define memcmp __builtin_memcmp
 
 // get uid from kernelsu
@@ -287,13 +286,8 @@ static int c_main(int argc, char **argv, char **envp)
 		if (!total_size)
 			goto list_empty;
 
-		// max stack size on linux is 8 * 1024 * 1024
-		// this should never happen but better catch this.
-		if (total_size > 8000000)
-			__builtin_trap();
-
-		// now we can prepare the same size of memory
-		void *buffer = alloca(total_size);
+		// now we can prepare the same size of memory, VLA warning!
+		char buffer[total_size];
 
 		cmd.arg = (uint64_t)buffer;
 		// cmd.flags = 0;
@@ -304,7 +298,7 @@ static int c_main(int argc, char **argv, char **envp)
 			goto fail;
 
 		// now we pointerwalk
-		char *char_buf = (char *)buffer;
+		char *char_buf = buffer;
 
 	bufwalk_start:
 		// get entry's string length first
