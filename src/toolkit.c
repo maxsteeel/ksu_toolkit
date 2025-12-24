@@ -6,6 +6,7 @@
 
 // zig cc -target aarch64-linux -Oz -s -Wl,--gc-sections,--strip-all,-z,norelro -fno-unwind-tables -Wl,--entry=__start toolkit.c -o toolkit 
 
+#define alloca __builtin_alloca
 #define memcmp __builtin_memcmp
 
 // get uid from kernelsu
@@ -295,8 +296,8 @@ static int c_main(int argc, char **argv, char **envp)
 		//if (total_size > 8 * 1000 * 1000)
 		//	__builtin_trap();
 
-		// now we can prepare the same size of memory, VLA warning!
-		char buffer[total_size];
+		// now we can prepare the same size of memory
+		char *buffer = alloca(total_size);
 
 		cmd.arg = (uint64_t)buffer;
 		// cmd.flags = 0;
