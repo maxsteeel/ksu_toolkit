@@ -42,7 +42,7 @@ struct sulogv1_entry_rcv_ptr {
 // sulog v2, timestamped version, 250 entries, 8 bytes per entry
 struct sulog_entry {
 	uint32_t s_time; // uptime in seconds
-	uint32_t data : 24;  // uid, uint24_t
+	uint32_t uid : 24;  // uid, uint24_t
 	uint32_t sym : 8;        // symbol
 } __attribute__((packed));
 
@@ -364,10 +364,11 @@ static int c_main(int argc, char **argv, char **envp)
 		int idx = (start + i) % SULOG_ENTRY_MAX; // modulus due to this overflowing entry_max
 		struct sulog_entry *entry_ptr = (struct sulog_entry *)(sulog_buf + idx * sizeof(struct sulog_entry) );
 
-		if (entry_ptr->data) {
+		// make sure to check for symbol instead!
+		if (entry_ptr->sym) {
 			// now write symbol
 			text_v2[5] = entry_ptr->sym;
-			long_to_str(entry_ptr->data, 6, &text_v2[12]);
+			long_to_str(entry_ptr->uid, 6, &text_v2[12]);
 			long_to_str(entry_ptr->s_time, 10, &text_v2[25]);
 
 			print_out(text_v2, sizeof(text_v2) - 1 );
