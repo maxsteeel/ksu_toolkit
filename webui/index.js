@@ -373,6 +373,7 @@ function checkUpdate() {
                                 if (errno !== 0) toast("Failed to open link");
                             });
                     }, 100);
+                    document.getElementById('exit-btn').click();
                 }
             }
         });
