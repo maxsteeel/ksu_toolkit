@@ -6,7 +6,6 @@
 
 // zig cc -target aarch64-linux -Oz -s -Wl,--gc-sections,--strip-all,-z,norelro -fno-unwind-tables -Wl,--entry=__start toolkit.c -o toolkit 
 
-#define alloca __builtin_alloca
 #define memcmp __builtin_memcmp
 
 // get uid from kernelsu
@@ -166,11 +165,11 @@ start:
 }
 
 __attribute__((always_inline))
-static inline int sulogv1(char **envp)
+static inline int sulogv1(char *sulog_buf)
 {
 	uint32_t sulog_index_next;
 	char t[] = "sym: ? uid: ??????\n";
-	char sulogv1_buf[SULOGV1_BUFSIZ];
+	char *sulogv1_buf = sulog_buf;
 
 	struct sulogv1_entry_rcv_ptr sbuf = {0};
 	sbuf.int_ptr = (uint64_t)&sulog_index_next;
@@ -296,10 +295,12 @@ static int c_main(int argc, char **argv, char **envp)
 		//if (total_size > 8 * 1000 * 1000)
 		//	__builtin_trap();
 
-		// now we can prepare the same size of memory +1 (extra \0)
-		char *buffer = alloca(total_size + 1);
+		// yes we literally even dont bother with alloca
+		// lifetime ends right after anyway, sp is now free game
 
+		// now we can prepare some memory +1 (extra \0)
 		// extra null terminator so we will have '\0\0' on tail
+		char *buffer = (char *)argv - sizeof(long);
 		buffer[total_size] = '\0'; 
 
 		cmd.arg = (uint64_t)buffer;
@@ -352,7 +353,7 @@ static int c_main(int argc, char **argv, char **envp)
 		uint32_t sulog_uptime = 0;
 		char uptime_text[] = "uptime: ??????????\n";
 		char text_v2[] = "sym: ? uid: ?????? time: ??????????\n";
-		char sulog_buf[SULOG_BUFSIZ];
+		char *sulog_buf = (char *)argv - sizeof(long);
 
 		struct sulog_entry_rcv_ptr sbuf = {0};
 		sbuf.index_ptr = (uint64_t)&sulog_index_next;
@@ -362,7 +363,7 @@ static int c_main(int argc, char **argv, char **envp)
 		ksu_sys_reboot(GET_SULOG_DUMP_V2, 0, (long)&sbuf);
 
 		if (*(uintptr_t *)&sbuf != (uintptr_t)&sbuf)
-			return sulogv1(envp); // attempt v1
+			return sulogv1(sulog_buf); // attempt v1
 
 		// sulog_index_next is the oldest entry!
 		// and sulog_index_next -1 is the newest entry
