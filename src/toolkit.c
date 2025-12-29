@@ -204,7 +204,7 @@ sulogv1_loop_start:
 }
 
 __attribute__((always_inline))
-static int c_main(int argc, char **argv, char **envp)
+static int c_main(long argc, char **argv, char **envp)
 {
 	const char ok[] = { 'o', 'k', '\n'};
 	const char usage[] =
@@ -218,6 +218,7 @@ static int c_main(int argc, char **argv, char **envp)
 	unsigned int fd = 0;
 	char *argv1 = argv[1];
 	char *argv2 = argv[2];
+	char *sp = (char *)argv - sizeof(long);
 
 	if (!argv1)
 		goto show_usage;
@@ -233,11 +234,12 @@ static int c_main(int argc, char **argv, char **envp)
 			goto fail;
 
 		// yeah we reuse argv1 as buffer		
-		ksu_sys_reboot(CHANGE_MANAGER_UID, cmd, (long)argv1);
+		ksu_sys_reboot(CHANGE_MANAGER_UID, cmd, (long)sp);
 
 		// all we need is just somethign writable that is atleast uintptr_t wide
-		// since argv1 here will fit 9 bytes, a full u64 ptr can fit no issues
-		if (*(uintptr_t *)argv1 != (uintptr_t)argv1 )
+		// since *sp is long as that is our argc, this will fit platform's uintptr_t
+		// while being properly aligned and passing ubsan
+		if (*(uintptr_t *)sp != (uintptr_t)sp )
 			goto fail;
 		
 		print_out(ok, sizeof(ok));
@@ -300,7 +302,7 @@ static int c_main(int argc, char **argv, char **envp)
 
 		// now we can prepare some memory +1 (extra \0)
 		// extra null terminator so we will have '\0\0' on tail
-		char *buffer = (char *)argv - sizeof(long);
+		char *buffer = sp;
 		buffer[total_size] = '\0'; 
 
 		cmd.arg = (uint64_t)buffer;
@@ -353,7 +355,7 @@ static int c_main(int argc, char **argv, char **envp)
 		uint32_t sulog_uptime = 0;
 		char uptime_text[] = "uptime: ??????????\n";
 		char text_v2[] = "sym: ? uid: ?????? time: ??????????\n";
-		char *sulog_buf = (char *)argv - sizeof(long);
+		char *sulog_buf = sp;
 
 		struct sulog_entry_rcv_ptr sbuf = {0};
 		sbuf.index_ptr = (uint64_t)&sulog_index_next;
@@ -410,9 +412,9 @@ static int c_main(int argc, char **argv, char **envp)
 				goto fail;
 		}
 
-		ksu_sys_reboot(CHANGE_KSUVER, ksuver_override, (long)argv1);
+		ksu_sys_reboot(CHANGE_KSUVER, ksuver_override, (long)sp);
 
-		if (*(uintptr_t *)argv1 != (uintptr_t)argv1 )
+		if (*(uintptr_t *)sp != (uintptr_t)sp )
 			goto fail;
 
 		print_out(ok, sizeof(ok));
