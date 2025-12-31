@@ -184,10 +184,9 @@ static inline int sulogv1(char *sulog_buf)
 	int start = sulog_index_next;
 
 	int i = 0;
-	int idx;
 
 sulogv1_loop_start:
-	idx = (start + i) % SULOGV1_ENTRY_MAX; // modulus due to this overflowing entry_max
+	int idx = (start + i) % SULOGV1_ENTRY_MAX; // modulus due to this overflowing entry_max
 	struct sulogv1_entry *entry_ptr = (struct sulogv1_entry *)(sulogv1_buf + idx * sizeof(struct sulogv1_entry) );
 
 	if (entry_ptr->symbol) {
@@ -318,11 +317,10 @@ static int c_main(long argc, char **argv, char **envp)
 
 		// now we pointerwalk
 		char *char_buf = buffer;
-		int len;
 
 	bufwalk_start:
 		// get entry's string length first
-		len = strlen(char_buf);
+		int len = strlen(char_buf);
 
 		// write a newline to it, basically replacing \0 with \n
 		*(char_buf + len) = '\n';
@@ -376,13 +374,12 @@ static int c_main(long argc, char **argv, char **envp)
 		int start = sulog_index_next;
 
 		int i = 0;
-		int idx;
 
 		long_to_str(sulog_uptime, 10, &uptime_text[8]);
 		print_out(uptime_text, sizeof(uptime_text));
 
 	sulog_loop_start:		
-		idx = (start + i) % SULOG_ENTRY_MAX; // modulus due to this overflowing entry_max
+		int idx = (start + i) % SULOG_ENTRY_MAX; // modulus due to this overflowing entry_max
 		struct sulog_entry *entry_ptr = (struct sulog_entry *)(sulog_buf + idx * sizeof(struct sulog_entry) );
 
 		// make sure to check for symbol instead!
