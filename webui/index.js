@@ -388,20 +388,40 @@ function checkUpdate() {
 function initTab() {
     const mdTab = document.querySelector('md-tabs');
     const contentContainers = document.querySelectorAll('.content-container');
+    const pager = document.querySelector('.horizontal-pager');
+
+    let lastTabIndex = 0;
+    const initialTab = mdTab.querySelector('md-primary-tab[active]');
+    if (initialTab) {
+        lastTabIndex = Array.from(mdTab.querySelectorAll('md-primary-tab')).indexOf(initialTab);
+    }
 
     const updateTabPositions = () => {
         const activeTab = mdTab.querySelector('md-primary-tab[active]');
         if (!activeTab) return;
 
         const tabIndex = Array.from(mdTab.querySelectorAll('md-primary-tab')).indexOf(activeTab);
+        const totalTabs = contentContainers.length;
         contentContainers.forEach((container, index) => {
-            const translateX = (index - tabIndex) * 100;
+            let diff = index - tabIndex;
+            if (diff > totalTabs / 2) diff -= totalTabs;
+            else if (diff < -totalTabs / 2) diff += totalTabs;
+
+            let oldDiff = index - lastTabIndex;
+            if (oldDiff > totalTabs / 2) oldDiff -= totalTabs;
+            else if (oldDiff < -totalTabs / 2) oldDiff += totalTabs
+
+            const isJump = Math.abs(diff - oldDiff) > 1;
+            const translateX = diff * 100;
             container.style.transform = `translateX(${translateX}%)`;
             setTimeout(() => {
-                container.style.transition = 'transform 0.3s ease';
+                container.style.transition = isJump ? 'none' : 'transform 0.3s ease';
                 container.classList.remove('unresolved');
             }, 10);
         });
+        // for avoid problems
+        lastTabIndex = tabIndex;
+        
         // fab
         document.getElementById('crown').classList.toggle('show', activeTab.id === 'crown-tab');
     };
@@ -416,6 +436,46 @@ function initTab() {
         await Promise.resolve();
         updateTabPositions();
     });
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    pager.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    pager.addEventListener('touchend', (e) => {
+        const touchEndX = e.changedTouches[0].screenX;
+        const touchEndY = e.changedTouches[0].screenY;
+        
+        handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY);
+    }, { passive: true });
+
+    const handleSwipe = (startX, startY, endX, endY) => {
+        const diffX = endX - startX;
+        const diffY = endY - startY;
+
+        if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+            
+            const tabs = Array.from(mdTab.querySelectorAll('md-primary-tab'));
+            const currentTab = mdTab.querySelector('md-primary-tab[active]');
+            const currentIndex = tabs.indexOf(currentTab);
+            let nextIndex = currentIndex;
+
+            if (diffX < 0) {
+                nextIndex = (currentIndex + 1) % tabs.length;
+            } else {
+                nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+            }
+
+            if (nextIndex !== currentIndex) {
+                tabs[currentIndex].removeAttribute('active');
+                tabs[nextIndex].setAttribute('active', '');
+                updateTabPositions();
+            }
+        }
+    };
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
